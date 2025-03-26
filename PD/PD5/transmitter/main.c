@@ -25,10 +25,10 @@ void transmit() {
 
 
     packet.uid = UID;
-    packet.packetID =   packetID;
+    packet.packetID = packetID;
 
     //checksum is xor of 2 fields
     packet.checksum= UID ^ packetID;
 
-    radioSend((uint8_t *) &packet, sizeof(packet));
+    radioSend(&packet, sizeof(packet));
 }

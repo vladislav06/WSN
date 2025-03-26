@@ -1,8 +1,7 @@
 #include "stdmansos.h"
 #include <stdint.h>
-
+#include "./../protocol/protocol.h"
 //Unique id of this mote
-#define UID 0x6996
 
 uint16_t packetID = 0;
 
@@ -22,13 +21,14 @@ void appMain(void) {
 
 void transmit() {
     // 2 byte id| 2 byte data| 2 byte checksum
-    uint16_t packet[3];
+   struct Packet packet = {};
 
-    packet[0] = UID;
-    packet[1] = packetID;
+
+    packet.uid = UID;
+    packet.packetID = packetID;
 
     //checksum is xor of 2 fields
-    packet[2] = UID ^ packetID;
+    packet.checksum= UID ^ packetID;
 
-    radioSend(packet, 6);
+    radioSend(&packet, sizeof(packet));
 }
