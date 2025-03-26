@@ -67,20 +67,21 @@ void appMain(void)
 
 	// Display received packets
         PRINTF("Received packet count: %d\n", counter);
-	counter = 0;
 
 	// Display received packet RSSI
 	PRINTF("Received packet RSSI, total: %d\n", totalPacketRSSI);
-	PRINTF("Received packet RSSI, average: %d\n", totalPacketRSSI / 10);
-	totalPacketRSSI = 0;
+	PRINTF("Received packet RSSI, average: %d\n", totalPacketRSSI / counter);
 
 	// Display received packet LQI
 	PRINTF("Received packet LQI, total: %d\n", totalPacketLQI);
-	PRINTF("Received packet LQI, average: %d\n", totalPacketLQI / 10);
-	totalPacketLQI = 0;
+	PRINTF("Received packet LQI, average: %d\n", totalPacketLQI / counter);
 
 	// Print divider for better readability
 	PRINTF("\n===\n\n");
+
+	// Reset global variables
+	counter = 0;
+	totalPacketRSSI = 0;
+	totalPacketLQI = 0;
     }
-    
 }
