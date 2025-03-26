@@ -1,7 +1,30 @@
-#define UID 0x6996
+#include <cstdint>
+
+// Unique protocol identificator
+#define MAGIC 0x6996
+
+struct Payload{
+    uint8_t lightSensorValue;
+};
 
 struct Packet {
-    uint16_t uid;
-    uint16_t packetID;
+    // Number to identify this protocol packets
+    uint16_t magic;
+
+    union{
+        struct{
+            // Uniquie device identificator
+            uint16_t deviceID;
+
+            // Uniquie packet identificator
+            uint16_t packetID;
+        };
+        uint32_t id;
+    };
+
+    // Packet payload
+    struct Payload payload;
+
+    // Packet checksum for error check
     uint16_t checksum;
 };
