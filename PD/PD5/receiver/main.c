@@ -17,7 +17,7 @@
 // Packet is stored here
 static struct Packet receivedPacket;
 // Counter for packets
-uint16_t counter = 0;
+int16_t counter = 0;
 // Keeping packet RSSI
 int16_t totalPacketRSSI = 0;
 // Keeping packet LQI
