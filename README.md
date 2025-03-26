@@ -1,2 +1,2 @@
-# PD5-mesh
+# WSN
 Wireless sensor network assignment 
