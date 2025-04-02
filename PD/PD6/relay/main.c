@@ -1,34 +1,20 @@
 #include "stdmansos.h"
 #include <stdint.h>
+
 #include "./../protocol/protocol.h"
+#include "./../utilities/msp430.h"
+
 //Unique id of this mote
-
-uint16_t packetID = 0;
-
-void transmit();
+uint8_t uniqueId;
 
 void appMain(void) {
+    msp430InitDs2401();
 
-    radioInit();
-    radioOn();
+    uniqueId = msp430GetUniqueIdentifier();
 
     while (true) {
-        transmit();
-        packetID++;
+        PRINTF("unique identifier\n");
+        //PRINTF("unique identifier %d", uniqueId);
         mdelay(100);
     }
-}
-
-void transmit() {
-    // 2 byte id| 2 byte data| 2 byte checksum
-   struct Packet packet = {};
-
-
-    packet.uid = UID;
-    packet.packetID = packetID;
-
-    //checksum is xor of 2 fields
-    packet.checksum= UID ^ packetID;
-
-    radioSend(&packet, sizeof(packet));
 }

@@ -9,6 +9,7 @@ endif
 ifeq ($(TARG),gateway)
   SOURCES = ./gateway/main.c
 endif
+SOURCES += ./utilities/msp430.c
 
 
 
