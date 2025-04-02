@@ -1,9 +1,13 @@
-ifeq ($(TARG),transmitter)
-  SOURCES = ./transmitter/main.c
+ifeq ($(TARG),sensor)
+  SOURCES = ./sensor/main.c
 endif
 
-ifeq ($(TARG),receiver)
-  SOURCES = ./receiver/main.c
+ifeq ($(TARG),relay)
+  SOURCES = ./relay/main.c
+endif
+
+ifeq ($(TARG),gateway)
+  SOURCES = ./gateway/main.c
 endif
 
 
