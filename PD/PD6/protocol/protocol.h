@@ -1,6 +1,9 @@
-#include <cstdint>
-
 // Unique protocol identificator
+#ifndef PROTOCOL_H
+#define PROTOCOL_H
+
+#include <stdint.h>
+
 #define MAGIC 0x6996
 
 struct Payload{
@@ -28,3 +31,5 @@ struct Packet {
     // Packet checksum for error check
     uint16_t checksum;
 };
+
+#endif
