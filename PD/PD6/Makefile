@@ -9,12 +9,13 @@ endif
 ifeq ($(TARG),gateway)
   SOURCES = ./gateway/main.c
 endif
-SOURCES += ./utilities/msp430.c
+
+SOURCES += ./utilities/idChip.c
 
 
 
 # Module is the name of the main module built by this makefile
-APPMOD = PD5
+APPMOD = PD6
 
 # --------------------------------------------------------------------
 # Set the key variables
