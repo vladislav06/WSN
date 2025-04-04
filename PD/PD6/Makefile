@@ -11,7 +11,7 @@ ifeq ($(TARG),gateway)
 endif
 
 SOURCES += ./utilities/idChip.c
-
+SOURCES += ./protocol/protocol.c
 
 
 # Module is the name of the main module built by this makefile

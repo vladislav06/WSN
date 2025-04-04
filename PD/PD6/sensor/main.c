@@ -12,25 +12,31 @@ void appMain(void) {
     radioInit();
     radioOn();
 
-    uint64_t id = getID();
-    PRINTF("%lu\n", id);
 
     while (true) {
         transmit();
-        packetID++;
-        mdelay(100);
+        mdelay(1000);
+        PRINTF("%lu\n", getID() & 0xFFFF);
     }
 }
 
 void transmit() {
-    // 2 byte id| 2 byte data| 2 byte checksum
-    struct Packet packet = {};
 
-    packet.magic = MAGIC;
-    packet.packetID = packetID;
+    // create packet and fill packet
+    // use first 2 bytes of id and hope that no collision will occur
+    struct Packet packet = createPacket(getID() & 0xFFFF, packetID);
     packetID++;
-    packet.deviceID =
 
-            radioSend(&packet, sizeof(packet));
+    struct Payload payload;
+    payload.lightSensorValue = adcRead(5);
+    packet.payload = payload;
+
+    calcChecksum(&packet);
+
+    PRINTF("packetID: %d\n", packet.packetID);
+    PRINTF("checksum: %u\n", packet.checksum);
+
+
+    radioSend(&packet, sizeof(packet));
 }
 
