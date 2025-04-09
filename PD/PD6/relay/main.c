@@ -1,16 +1,13 @@
 #include "stdmansos.h"
+#include "serial_number.h"
 #include <stdint.h>
-
 #include "./../protocol/protocol.h"
-#include "./../utilities/msp430.h"
-
-//Unique id of this mote
-uint8_t uniqueId;
+#include "./../utilities/idChip.h"
 
 void appMain(void) {
-    msp430InitDs2401();
+    //msp430InitDs2401();
 
-    uniqueId = msp430GetUniqueIdentifier();
+    uniqueId = getID();
 
     while (true) {
         PRINTF("unique identifier\n");

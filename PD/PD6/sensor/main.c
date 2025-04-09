@@ -24,7 +24,7 @@ void transmit() {
 
     // create packet and fill packet
     // use first 2 bytes of id and hope that no collision will occur
-    struct Packet packet = createPacket(getID() & 0xFFFF, packetID);
+    struct Packet packet = createPacket(getID() & 0xFFFF, DEVICE_TYPE_SENSOR, packetID);
     packetID++;
 
     struct Payload payload;

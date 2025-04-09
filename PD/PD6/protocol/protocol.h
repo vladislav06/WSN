@@ -7,6 +7,12 @@
 
 #define MAGIC 0x6996
 
+enum DeviceTypes {
+    DEVICE_TYPE_SENSOR = 1,
+    DEVICE_TYPE_RELAY,
+    DEVICE_TYPE_GATEWAY
+};
+
 struct Payload {
     uint16_t lightSensorValue;
 };
@@ -14,6 +20,9 @@ struct Payload {
 struct Packet {
     // Number to identify this protocol's packets
     uint16_t magic;
+
+    // Device type to distinguish between Sensor and Relay
+    uint8_t deviceType;
 
     union {
         struct {
@@ -34,7 +43,7 @@ struct Packet {
 };
 
 
-struct Packet createPacket(uint16_t deviceID, uint16_t packetID);
+struct Packet createPacket(uint16_t deviceID, enum DeviceTypes deviceType, uint16_t packetID);
 
 /**
  * Calculates checksum of packet and saves it into checksum field

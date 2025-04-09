@@ -4,9 +4,10 @@
 #include "protocol.h"
 #include "stdmansos.h"
 
-struct Packet createPacket(uint16_t deviceID, uint16_t packetID) {
+struct Packet createPacket(uint16_t deviceID, enum DeviceTypes deviceType, uint16_t packetID) {
     struct Packet packet;
     packet.magic = MAGIC;
+    packet.deviceType = deviceType;
     packet.deviceID = deviceID;
     packet.packetID = packetID;
     packet.checksum = 0;
