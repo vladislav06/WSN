@@ -3,24 +3,19 @@
 #include <stdint.h>
 #include "./../protocol/protocol.h"
 #include "./../utilities/idChip.h"
+#include "./../utilities/circularBuffer.h"
 
 // TODO: Implement received packet array in utils to reuse in gateway
-#define STORED_PACKET_COUNT 100
-
 static struct Packet receivedPacket;
-static uint32_t receivedPackets[STORED_PACKET_COUNT];
-uint16_t receivedPacketCounter = 0;
 
 void transmit();
 
 void recvRadio();
 
-bool packetAlreadyReceived(uint32_t id);
-
 void appMain(void) {
     radioInit();
 
-    memset(receivedPackets, 0, sizeof receivedPackets);
+    initializeCircularBuffer();
 
     radioSetReceiveHandle(recvRadio);
 
@@ -67,23 +62,9 @@ void recvRadio() {
         }
 
         // Write down this packet as a sent one
-        receivedPackets[receivedPacketCounter % 100] = receivedPacket.id;
-        // increment counter of received packets
-        receivedPacketCounter++;
+        pushIntoCircularBuffer(receivedPacket.id);
 
         // call transmit function
         transmit(&receivedPacket);
     }
-}
-
-bool packetAlreadyReceived(uint32_t id) {
-    int i;
-
-    for (i = 0; i < STORED_PACKET_COUNT; i++) {
-        if (id == receivedPackets[i]) {
-            return true;
-        }
-    }
-
-    return false;
 }

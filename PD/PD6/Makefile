@@ -11,6 +11,7 @@ ifeq ($(TARG),gateway)
 endif
 
 SOURCES += ./utilities/idChip.c
+SOURCES += ./utilities/circularBuffer.c
 SOURCES += ./protocol/protocol.c
 
 
