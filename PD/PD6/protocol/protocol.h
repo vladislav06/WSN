@@ -17,10 +17,10 @@ struct Packet {
 
     union {
         struct {
-            // Uniquie device identificator
+            // Unique device identificator
             uint16_t deviceID;
 
-            // Uniquie packet identificator
+            // Unique packet identificator
             uint16_t packetID;
         };
         uint32_t id;
@@ -36,8 +36,23 @@ struct Packet {
 
 struct Packet createPacket(uint16_t deviceID, uint16_t packetID);
 
+/**
+ * Calculates checksum of packet and saves it into checksum field
+ * @param packet
+ */
 void calcChecksum(struct Packet *packet);
 
+/**
+ * Checks whether checksum of a packet matches with what is writen in the packet
+ * @param packet
+ */
 bool checkChecksum(struct Packet *packet);
+
+/**
+ * Checks whether packet is valid, i.e. has valid MAGIC and checksum
+ * @param packet
+ * @return
+ */
+bool checkValidity(struct Packet *packet);
 
 #endif

@@ -64,6 +64,7 @@ void calcChecksum(struct Packet *packet) {
 /**
  * Checks whether checksum of a packet matches with what is writen in the packet
  * @param packet
+ * @return true if checksums are equal
  */
 bool checkChecksum(struct Packet *packet) {
     // save packet's crc into temp var, because original crc was calculated with packet->checksum field being 0
@@ -73,4 +74,14 @@ bool checkChecksum(struct Packet *packet) {
     packet->checksum = crc;
 
     return calculatedCrc == packet->checksum;
+}
+
+bool checkValidity(struct Packet *packet) {
+    if (packet->magic != MAGIC) {
+        return false;
+    }
+    if (!checkChecksum(packet)) {
+        return false;
+    }
+    return true;
 }
