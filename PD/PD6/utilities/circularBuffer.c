@@ -8,7 +8,7 @@
 // Stores the received packets
 static uint32_t receivedPackets[STORED_PACKET_COUNT];
 // Keeps track of how many packets were received
-uint16_t receivedPacketCounter = 0;
+static uint16_t receivedPacketCounter = 0;
 
 void initializeCircularBuffer() {
     memset(receivedPackets, 0, sizeof receivedPackets);
@@ -29,6 +29,10 @@ bool packetAlreadyReceived(uint32_t id) {
 void pushIntoCircularBuffer(uint32_t id) {
     receivedPackets[receivedPacketCounter % 100] = id;
     receivedPacketCounter++;
+    //handle overflow
+    if (receivedPacketCounter >= 65500) {
+        receivedPacketCounter = 0;
+    }
 
     return;
 }

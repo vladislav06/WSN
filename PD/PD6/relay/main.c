@@ -44,13 +44,9 @@ void recvRadio() {
     len = radioRecv(&receivedPacket, sizeof(receivedPacket));
 
     if (len > 0) {
-        // Check Magic
-        if (receivedPacket.magic != MAGIC) {
-            return;
-        }
-        
-        // Check checksum
-        if (!checkChecksum(&receivedPacket)) {
+
+        // ignore invalid packets
+        if (checkValidity(&receivedPacket)) {
             return;
         }
 
