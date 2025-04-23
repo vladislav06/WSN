@@ -1,11 +1,12 @@
 #include "stdmansos.h"
 #include "serial_number.h"
+
 #include <stdint.h>
+
 #include "./../protocol/protocol.h"
 #include "./../utilities/idChip.h"
 #include "./../utilities/circularBuffer.h"
 
-// TODO: Implement received packet array in utils to reuse in gateway
 static struct Packet receivedPacket;
 
 void transmit();
@@ -22,7 +23,6 @@ void appMain(void) {
     radioOn();
 
     while (true) {
-        // TODO: Define printf here (if needed...)
         mdelay(1000);
         PRINTF("%lu\n", getID() & 0xFFFF);
     }
@@ -30,12 +30,12 @@ void appMain(void) {
 
 void transmit(struct Packet *packet) {
     packet->deviceType = DEVICE_TYPE_RELAY;
-    calcChecksum(&packet);
+    calcChecksum(packet);
 
     PRINTF("packetID: %d\n", packet->packetID);
     PRINTF("checksum: %u\n", packet->checksum);
 
-    radioSend(&packet, sizeof(packet));
+    radioSend(packet, sizeof(packet));
 }
 
 void recvRadio() {
@@ -44,8 +44,6 @@ void recvRadio() {
     len = radioRecv(&receivedPacket, sizeof(receivedPacket));
 
     if (len > 0) {
-        // begin checking whether we received the correct data...
-
         // Check Magic
         if (receivedPacket.magic != MAGIC) {
             return;
@@ -56,7 +54,7 @@ void recvRadio() {
             return;
         }
 
-        // Check whether this packed has already been received
+        // Check whether this packet has already been received
         if (packetAlreadyReceived(receivedPacket.id)) {
             return;
         }
