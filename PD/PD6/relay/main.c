@@ -35,16 +35,15 @@ void transmit(struct Packet *packet) {
     PRINTF("packetID: %d\n", packet->packetID);
     PRINTF("checksum: %u\n", packet->checksum);
 
-    radioSend(packet, sizeof(packet));
+    radioSend(packet, sizeof(struct Packet));
 }
 
 void recvRadio() {
     int16_t len;
 
-    len = radioRecv(&receivedPacket, sizeof(receivedPacket));
+    len = radioRecv(&receivedPacket, sizeof(struct Packet));
 
     if (len > 0) {
-
         // ignore invalid packets
         if (checkValidity(&receivedPacket)) {
             return;

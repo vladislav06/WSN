@@ -37,6 +37,6 @@ void transmit() {
     PRINTF("checksum: %u\n", packet.checksum);
 
 
-    radioSend(&packet, sizeof(packet));
+    radioSend(&packet, sizeof(struct Packet));
 }
 
