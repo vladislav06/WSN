@@ -17,7 +17,7 @@ void appMain(void) {
         transmit();
         mdelay(1000);
         PRINTF("Output from SENSOR, device ID is: ");
-        PRINTF("%lu\n", getID() & 0xFFFF);
+        PRINTF("%u\n", getID() );
     }
 }
 
@@ -25,7 +25,7 @@ void transmit() {
 
     // create packet and fill packet
     // use first 2 bytes of id and hope that no collision will occur
-    struct Packet packet = createPacket(getID() & 0xFFFF, DEVICE_TYPE_SENSOR, packetID);
+    struct Packet packet = createPacket(getID() , DEVICE_TYPE_SENSOR, packetID);
     packetID++;
 
     struct Payload payload;

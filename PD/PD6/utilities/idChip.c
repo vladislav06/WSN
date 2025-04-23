@@ -7,10 +7,10 @@
 #include "serial_number.h"
 
 
-uint64_t getID() {
-    uint64_t result;
+uint16_t getID() {
+    uint16_t result[4];
 
-    serialNumberRead((uint8_t *) &result);
+    serialNumberRead((uint8_t *) result);
 
-    return result;
+    return result[3];
 }

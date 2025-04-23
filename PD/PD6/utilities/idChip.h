@@ -4,6 +4,6 @@
 
 // Function that returns the unique identifier of the msp430 chip,
 // that is stored in ds2401 (acts as an abstraction layer in case of change)
-uint64_t getID();
+uint16_t getID();
 
 #endif

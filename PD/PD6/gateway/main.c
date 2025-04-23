@@ -16,7 +16,7 @@ void appMain(void) {
     while (1) {
         mdelay(5000);
         PRINTF("Output from GATEWAY, device ID is: ");
-        PRINTF("%lu\n", getID() & 0xFFFF);
+        PRINTF("%u\n", getID());
     }
 }
 
