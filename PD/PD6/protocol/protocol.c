@@ -58,6 +58,7 @@ crc crcSlow(uint8_t const message[], uint32_t nBytes) {
  * @param packet
  */
 void calcChecksum(struct Packet *packet) {
+    packet->checksum = 0;
     uint16_t crc = crcSlow((uint8_t *) packet, sizeof(struct Packet));
     packet->checksum = crc;
 }
