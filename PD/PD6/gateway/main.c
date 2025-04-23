@@ -14,7 +14,7 @@ void appMain(void) {
     radioSetReceiveHandle(recvRadio);
     radioOn();
     while (1) {
-        mdelay(1000);
+        mdelay(5000);
         PRINTF("Output from GATEWAY, device ID is: ");
         PRINTF("%lu\n", getID() & 0xFFFF);
     }
@@ -49,6 +49,6 @@ void recvRadio(void) {
         pushIntoCircularBuffer(packet.id);
         // send to usb
 
-        PRINTF("Data from: %d: %d\n", packet.deviceID, packet.payload.lightSensorValue);
+        PRINTF("Data from: %d:%d -> light:%d\n", packet.deviceID, packet.packetID, packet.payload.lightSensorValue);
     }
 }

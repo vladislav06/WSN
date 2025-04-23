@@ -23,7 +23,7 @@ void appMain(void) {
     radioOn();
 
     while (true) {
-        mdelay(1000);
+        mdelay(5000);
         PRINTF("Output from RELAY, device ID is: ");
         PRINTF("%lu\n", getID() & 0xFFFF);
     }
@@ -33,8 +33,8 @@ void transmit(struct Packet *packet) {
     packet->deviceType = DEVICE_TYPE_RELAY;
     calcChecksum(packet);
 
-    PRINTF("packetID: %d\n", packet->packetID);
-    PRINTF("checksum: %u\n", packet->checksum);
+//    PRINTF("packetID: %d\n", packet->packetID);
+//    PRINTF("checksum: %u\n", packet->checksum);
 
     radioSend(packet, sizeof(struct Packet));
 }
@@ -63,6 +63,8 @@ void recvRadio() {
         // Write down this packet as a sent one
         pushIntoCircularBuffer(receivedPacket.id);
 //        PRINTF("Data from: %d: %d\n", receivedPacket.deviceID, receivedPacket.payload.lightSensorValue);
+
+        PRINTF("Data from: %d:%d -> light:%d RESENDING\n", receivedPacket.deviceID, receivedPacket.packetID, receivedPacket.payload.lightSensorValue);
 
         // call transmit function
         transmit(&receivedPacket);
