@@ -15,6 +15,8 @@ void appMain(void) {
     radioOn();
     while (1) {
         mdelay(1000);
+        PRINTF("Output from GATEWAY, device ID is: ");
+        PRINTF("%lu\n", getID() & 0xFFFF);
     }
 }
 

@@ -16,6 +16,7 @@ void appMain(void) {
     while (true) {
         transmit();
         mdelay(1000);
+        PRINTF("Output from SENSOR, device ID is: ");
         PRINTF("%lu\n", getID() & 0xFFFF);
     }
 }

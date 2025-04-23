@@ -49,7 +49,7 @@ struct Packet createPacket(uint16_t deviceID, enum DeviceTypes deviceType, uint1
  * Calculates checksum of packet and saves it into checksum field
  * @param packet
  */
-void calcChecksum(struct Packet *packet);
+void calcChecksumSS(struct Packet *packet);
 
 /**
  * Checks whether checksum of a packet matches with what is writen in the packet

@@ -24,7 +24,8 @@ void appMain(void) {
 
     while (true) {
         mdelay(1000);
-//        PRINTF("%lu\n", getID() & 0xFFFF);
+        PRINTF("Output from RELAY, device ID is: ");
+        PRINTF("%lu\n", getID() & 0xFFFF);
     }
 }
 
