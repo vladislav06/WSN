@@ -24,7 +24,7 @@ void appMain(void) {
 
     while (true) {
         mdelay(1000);
-        PRINTF("%lu\n", getID() & 0xFFFF);
+//        PRINTF("%lu\n", getID() & 0xFFFF);
     }
 }
 
@@ -42,20 +42,26 @@ void recvRadio() {
     int16_t len;
 
     len = radioRecv(&receivedPacket, sizeof(struct Packet));
+//    PRINTF("Packet rec\n");
 
     if (len > 0) {
+
         // ignore invalid packets
-        if (checkValidity(&receivedPacket)) {
+        if (!checkValidity(&receivedPacket)) {
+//            PRINTF("Packet invalid, MAGIC:%d\n", receivedPacket.magic);
             return;
         }
 
+
         // Check whether this packet has already been received
         if (packetAlreadyReceived(receivedPacket.id)) {
+//            PRINTF("packetAlreadyReceived:%d|%d\n", receivedPacket.packetID, receivedPacket.deviceID);
             return;
         }
 
         // Write down this packet as a sent one
         pushIntoCircularBuffer(receivedPacket.id);
+//        PRINTF("Data from: %d: %d\n", receivedPacket.deviceID, receivedPacket.payload.lightSensorValue);
 
         // call transmit function
         transmit(&receivedPacket);

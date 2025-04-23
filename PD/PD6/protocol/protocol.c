@@ -74,14 +74,19 @@ bool checkChecksum(struct Packet *packet) {
     uint16_t calculatedCrc = crcSlow((uint8_t *) packet, sizeof(struct Packet));
     packet->checksum = crc;
 
+    if (calculatedCrc != packet->checksum) {
+//        PRINTF("checksum mismatch, must be:%d | got:%d\n", calculatedCrc, packet->checksum);
+    }
     return calculatedCrc == packet->checksum;
 }
 
 bool checkValidity(struct Packet *packet) {
     if (packet->magic != MAGIC) {
+//        PRINTF("magic missmatch\n");
         return false;
     }
     if (!checkChecksum(packet)) {
+//        PRINTF("checksum missmatch\n");
         return false;
     }
     return true;

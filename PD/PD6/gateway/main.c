@@ -9,6 +9,7 @@
 void recvRadio(void);
 
 void appMain(void) {
+    initializeCircularBuffer();
     radioInit();
     radioSetReceiveHandle(recvRadio);
     radioOn();
@@ -25,7 +26,7 @@ void recvRadio(void) {
 
     if (len > 0) {
         // ignore invalid packets
-        if (checkValidity(&packet)) {
+        if (!checkValidity(&packet)) {
 //            PRINTF("Packet invalid, MAGIC:%d\n", packet.magic);
             return;
         }
