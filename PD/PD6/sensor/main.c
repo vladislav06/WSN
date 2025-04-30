@@ -9,13 +9,25 @@
 
 uint16_t packetID = 0;
 
-uint16_t recordedHopCount = UINT16_MAX;
-
 uint16_t timeCounter = 0;
 
 void recvRadio();
 
 void transmit();
+
+void processAdv(struct Advertisement *receivedPacket);
+
+void processAdvStart(struct AdvertisementStart *receivedPacket);
+
+struct RoutingTableEntry {
+    uint16_t devId;
+    uint16_t hopCount;
+};
+
+struct RoutingTableEntry routing = {0};
+bool nextAdvOverWrites = false;
+static uint16_t lastAdvId = 0;
+
 
 void appMain(void) {
     radioInit();
@@ -37,42 +49,80 @@ void appMain(void) {
 }
 
 void recvRadio(void) {
-    struct Advertisement packet;
-    int len = radioRecv(&packet, sizeof(struct Advertisement));
+    struct Packet receivedPacket;
+    int16_t len;
+
+    len = radioRecv(&receivedPacket, sizeof(struct Packet));
     DEB("Packet rec\n");
 
     if (len > 0) {
-        // ignore invalid packets
-        if (!checkAdvValidity(&packet)) {
-            DEB("Packet invalid, MAGIC:%d\n", packet.magic);
+        // check if packet contains magic
+        if (receivedPacket.magic != MAGIC) {
+            DEB("Packet invalid, MAGIC:%d\n", receivedPacket.magic);
             return;
         }
 
-        // record new hopCount
-        if (packet.recordedHopCount < recordedHopCount) {
-            recordedHopCount = packet.recordedHopCount;
-            DEB("Recorded new hopCount: %u\n", recordedHopCount);
+        // actions dependant on packetType
+        switch (receivedPacket.packetType) {
+            case PACKET_TYPE_PACKET:
+                break;
+            case PACKET_TYPE_ADVERTISEMENT:
+                // cast packet to adv type
+                processAdv((struct Advertisement *) &receivedPacket);
+                break;
+            case PACKET_TYPE_ADVERTISEMENT_START:
+                // cast packet to advStart type
+                processAdvStart((struct AdvertisementStart *) &receivedPacket);
+                break;
+            default:
+                DEB("Invalid packet or invalid packet type received\n");
+                break;
         }
     }
 }
 
-void transmit() {
-    // skip creating packet if the hopCount has not been changed
-    if (recordedHopCount == UINT16_MAX) {
-        DEB("HopCount not changed, packet not sent");
+void processAdv(struct Advertisement *receivedPacket) {
+    // cast to adv packet
+    struct Advertisement advPacket = *receivedPacket;
+
+    // ignore invalid packets
+    if (!checkAdvValidity(&advPacket)) {
+        DEB("Packet invalid, MAGIC:%d\n", receivedPacket->magic);
         return;
     }
 
+    if (advPacket.recordedHopCount < routing.hopCount || nextAdvOverWrites) {
+        nextAdvOverWrites = false;
+        routing.hopCount = advPacket.recordedHopCount;
+        routing.devId = advPacket.deviceID;
+    }
+}
+
+void processAdvStart(struct AdvertisementStart *receivedPacket) {
+    // cast to adv packet
+    struct AdvertisementStart advsPacket = *receivedPacket;
+
+    // ignore invalid packets
+    if (!checkAdvStartChecksum(&advsPacket)) {
+        DEB("Packet invalid, MAGIC:%d\n", receivedPacket->magic);
+        return;
+    }
+    nextAdvOverWrites = true;
+}
+
+
+void transmit() {
     // create packet and fill packet
     // use first 2 bytes of id and hope that no collision will occur
-    struct Packet packet = createPacket(getID() , DEVICE_TYPE_SENSOR, packetID);
+    struct Packet packet = createPacket(getID(), DEVICE_TYPE_SENSOR, packetID);
     packetID++;
 
     struct Payload payload;
     payload.lightSensorValue = adcRead(5);
     packet.payload = payload;
     // deduct 1 for sending this packet (consider it as the first step)
-    packet.hopCount = recordedHopCount - 1;
+    packet.hopCount = routing.hopCount - 1;
+    packet.target = routing.devId;
 
     calcPckChecksum(&packet);
 
