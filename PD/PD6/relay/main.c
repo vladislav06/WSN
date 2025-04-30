@@ -11,6 +11,7 @@
 // 1. Make relay receive advertisement packets:
 // - it increments the packet's hopcount,
 // - it records it's id in the blacklist of the packet,
+// - it saves advertisement packet id and ignores it if received second time
 // - and it resends the packet forward,
 // 2. New algorithm for resending packets:
 // - it receives a new data packet,
@@ -84,4 +85,20 @@ void recvRadio() {
         // call transmit function
         transmit(&receivedPacket);
     }
+}
+
+
+void transmitAdv(struct Advertisement *adv) {
+    adv->blacklistedDeviceId = adv->deviceID;
+    adv->deviceID = getID();
+    adv->recordedHopCount++;
+    calcAdvChecksum(adv);
+    radioSend(adv, sizeof(struct Advertisement));
+}
+
+void transmitAdvStart(struct AdvertisementStart *advs) {
+    advs->blacklistedDeviceId = advs->deviceID;
+    advs->deviceID = getID();
+    calcAdvStartChecksum(advs);
+    radioSend(advs, sizeof(struct AdvertisementStart));
 }
