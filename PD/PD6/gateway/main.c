@@ -24,6 +24,8 @@ void recvRadio(void);
 
 void sendAdv(void);
 
+static uint16_t advID = 0;
+
 void appMain(void) {
     radioInit();
     radioSetReceiveHandle(recvRadio);
@@ -37,11 +39,18 @@ void appMain(void) {
 }
 
 void sendAdv(void) {
-    struct Advertisement adv = createAdvPacket(getID(), 0);
+
+    struct AdvertisementStart advs = createAdvStartPacket(getID(), advID);
+    calcAdvStartChecksum(&advs);
+    radioSend(&advs, sizeof(struct AdvertisementStart));
+    mdelay(500);
+
+    struct Advertisement adv = createAdvPacket(getID(), advID);
     adv.recordedHopCount = 0;
     adv.blacklistedDeviceId = 0;
     calcAdvChecksum(&adv);
     radioSend(&adv, sizeof(struct Advertisement));
+    advID++;
 }
 
 
