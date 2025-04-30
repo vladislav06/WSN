@@ -7,22 +7,6 @@
 #include "./../utilities/idChip.h"
 #include "./../utilities/debug.h"
 
-// TODO in this file:
-// 1. Make relay receive advertisement packets:
-// - it increments the packet's hopcount,
-// - it records it's id in the blacklist of the packet,
-// - it saves advertisement packet id and ignores it if received second time
-// - and it resends the packet forward,
-// 2. New algorithm for resending packets:
-// - it receives a new data packet,
-// - if the data packet's hopCount is 0, don't resend it,
-// - if the data packet's blacklisted id is equal to the current device id, skip it,
-// - if all is well, then:
-// -- decrease the hopCount in the packet by 1,
-// -- write it's own deviceId into blacklisted Id,
-// -- resend the packet
-// 3. Remove checks using circularBuffer.
-
 static struct Packet receivedPacket;
 
 void recvRadio();
@@ -45,9 +29,8 @@ struct RoutingTableEntry {
 };
 
 struct RoutingTableEntry routing = {0};
-bool nextAdvOverWrites = false;
+bool nextAdvOverWrites = true;
 static uint16_t lastAdvId = 0;
-
 
 void appMain(void) {
     radioInit();
@@ -82,11 +65,9 @@ void recvRadio() {
                 processRegular(&receivedPacket);
                 break;
             case PACKET_TYPE_ADVERTISEMENT:
-                // cast packet to adv type
                 processAdv((struct Advertisement *) &receivedPacket);
                 break;
             case PACKET_TYPE_ADVERTISEMENT_START:
-                // cast packet to advStart type
                 processAdvStart((struct AdvertisementStart *) &receivedPacket);
                 break;
             default:
@@ -124,15 +105,27 @@ void processAdv(struct Advertisement *receivedPacket) {
         return;
     }
 
-    if (advPacket.blacklistedDeviceId == getID()) {
-        DEB("In blacklist");
+    // ignore packets that should be ignored
+    if (advsPacket.packetID == lastAdvId) {
+        DEB("Received packet ID is equal to lastAdvId, skipped\n");
         return;
     }
+    
+    // ignore the blacklisted packets
+    if (advPacket.blacklistedDeviceId == getID()) {
+        DEB("In blacklist\n");
+        return;
+    }
+
+    // overwrite hopCount if new hopCount is less OR if we were instructed to
     if (advPacket.recordedHopCount < routing.hopCount || nextAdvOverWrites) {
         nextAdvOverWrites = false;
         routing.hopCount = advPacket.recordedHopCount;
         routing.devId = advPacket.deviceID;
     }
+
+    // Save packet id to avoid retransmission
+    lastAdvId = advPacket.packetID;
 
     //send to the rest of the network
     transmitAdv(&advPacket);
@@ -140,7 +133,7 @@ void processAdv(struct Advertisement *receivedPacket) {
 }
 
 void processAdvStart(struct AdvertisementStart *receivedPacket) {
-    // cast to adv packet
+    // cast to advStart packet
     struct AdvertisementStart advsPacket = *receivedPacket;
 
     // ignore invalid packets
@@ -148,24 +141,33 @@ void processAdvStart(struct AdvertisementStart *receivedPacket) {
         DEB("Packet invalid, MAGIC:%d\n", receivedPacket->magic);
         return;
     }
-    if (advsPacket.blacklistedDeviceId == getID()) {
-        DEB("In blacklist");
+
+    // ignore packets that should be ignored
+    if (advsPacket.packetID == lastAdvId) {
+        DEB("Received packet ID is equal to lastAdvId, skipped\n");
         return;
     }
 
+    // ignore the blacklisted packets
+    if (advsPacket.blacklistedDeviceId == getID()) {
+        DEB("In blacklist\n");
+        return;
+    }
+
+    // Save packet id to avoid retransmission
+    lastAdvId = advsPacket.packetID;
+    // since advStart was received, routing must be reset
     nextAdvOverWrites = true;
 
     transmitAdvStart(&advsPacket);
     return;
 }
 
-
 void transmitRegular(struct Packet *packet) {
     packet->deviceType = DEVICE_TYPE_RELAY;
     packet->hopCount = (packet->hopCount) - 1;
     calcPckChecksum(packet);
     packet->target = routing.devId;
-
 
     DEB("packetID: %d\n", packet->packetID);
     DEB("checksum: %u\n", packet->checksum);
