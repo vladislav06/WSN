@@ -78,28 +78,50 @@ struct Advertisement {
 
     // Packet checksum for error check
     uint16_t checksum;
-}
+};
 
 
 struct Packet createPacket(uint16_t deviceID, enum DeviceTypes deviceType, uint16_t packetID);
+
+struct Advertisement createAdvPacket(uint16_t deviceID, uint16_t packetID);
 
 /**
  * Calculates checksum of packet and saves it into checksum field
  * @param packet
  */
-void calcChecksumSS(struct Packet *packet);
+void calcPckChecksum(struct Packet *packet);
+
+/**
+ * Calculates checksum of packet and saves it into checksum field
+ * @param packet
+ */
+void calcAdvChecksum(struct Advertisement *packet);
 
 /**
  * Checks whether checksum of a packet matches with what is writen in the packet
  * @param packet
  */
-bool checkChecksum(struct Packet *packet);
+bool checkPckChecksum(struct Packet *packet);
+
+/**
+ * Checks whether checksum of a packet matches with what is writen in the packet
+ * @param packet
+ */
+bool checkAdvChecksum(struct Advertisement *packet);
+
 
 /**
  * Checks whether packet is valid, i.e. has valid MAGIC and checksum
  * @param packet
  * @return
  */
-bool checkValidity(struct Packet *packet);
+bool checkPckValidity(struct Packet *packet);
+
+/**
+ * Checks whether packet is valid, i.e. has valid MAGIC and checksum
+ * @param packet
+ * @return
+ */
+bool checkAdvValidity(struct Advertisement *packet);
 
 #endif
