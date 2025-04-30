@@ -5,6 +5,20 @@
 #include "./../utilities/idChip.h"
 #include "../utilities/circularBuffer.h"
 
+// TODO in this file:
+// 1. Make gateway send advertisement packets:
+// - hopcount is initially 0,
+// - serves to set hopcounts in relays, does not actually receive any data.
+// 2. New algorithm for receiving packets:
+// - simply outputs what it received,
+// - does not check whether the packet was already received or not.
+// 3. Remove checks using circularBuffer.
+// CONCERNS:
+// 1. We need to make sure that the gateway does not resend already received packets.
+// Two choices:
+// 1.1. Make the routing for the packet strict,
+// 1.2. Somehow reject the packet without remembering it 
+// (hopCounts? some other packet variable?)
 
 void recvRadio(void);
 

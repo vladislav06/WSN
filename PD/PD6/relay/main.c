@@ -7,6 +7,21 @@
 #include "./../utilities/idChip.h"
 #include "./../utilities/circularBuffer.h"
 
+// TODO in this file:
+// 1. Make relay receive advertisement packets:
+// - it increments the packet's hopcount,
+// - it records it's id in the blacklist of the packet,
+// - and it resends the packet forward,
+// 2. New algorithm for resending packets:
+// - it receives a new data packet,
+// - if the data packet's hopCount is 0, don't resend it,
+// - if the data packet's blacklisted id is equal to the current device id, skip it,
+// - if all is well, then:
+// -- decrease the hopCount in the packet by 1,
+// -- write it's own deviceId into blacklisted Id,
+// -- resend the packet
+// 3. Remove checks using circularBuffer.
+
 static struct Packet receivedPacket;
 
 void transmit();

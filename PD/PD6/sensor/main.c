@@ -6,6 +6,11 @@
 #include "./../protocol/protocol.h"
 #include "./../utilities/idChip.h"
 
+// TODO in this file:
+// 1. Make sensor receive advertisement packets
+// 2. The sensor records the lowest hopCount from the packets
+// 3. When sending a new packet, the sensor sets hopCount to what has been recorded
+
 uint16_t packetID = 0;
 
 uint16_t timeCounter = 0;

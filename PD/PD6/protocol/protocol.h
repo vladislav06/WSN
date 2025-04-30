@@ -17,6 +17,9 @@ struct Payload {
     uint16_t lightSensorValue;
 };
 
+/*
+    Main packet structure - carries the sensor value
+*/
 struct Packet {
     // Number to identify this protocol's packets
     uint16_t magic;
@@ -24,6 +27,8 @@ struct Packet {
     // Device type to distinguish between Sensor and Relay
     uint8_t deviceType;
 
+    // TODO: Consider whether this id is still needed, may be simplified
+    // Or removed altogether in favor of something else.
     union {
         struct {
             // Unique device identificator
@@ -38,9 +43,42 @@ struct Packet {
     // Packet payload
     struct Payload payload;
 
+    // Data about how many hops this packet has left
+    uint16_t hopCount;
+
     // Packet checksum for error check
     uint16_t checksum;
 };
+
+/*
+    Advertisement packet structure - used to set hopCount in origin (sensor)
+*/
+struct Advertisement {
+    // Number to identify this protocol's packets
+    uint16_t magic;
+
+    // TODO: Consider whether this id is still needed, may be simplified
+    // Or removed altogether in favor of something else.
+    union {
+        struct {
+            // Unique device identificator
+            uint16_t deviceID;
+
+            // Unique packet identificator
+            uint16_t packetID;
+        };
+        uint32_t id;
+    };
+
+    // Blacklisted relay ID to avoid resending to the same one
+    uint16_t blacklistedDeviceId;
+
+    // Recorded hops
+    uint16_t recordedHopCount;
+
+    // Packet checksum for error check
+    uint16_t checksum;
+}
 
 
 struct Packet createPacket(uint16_t deviceID, enum DeviceTypes deviceType, uint16_t packetID);
