@@ -5,7 +5,7 @@
 
 #include "./../protocol/protocol.h"
 #include "./../utilities/idChip.h"
-#include "./../utilities/circularBuffer.h"
+#include "./../utilities/debug.h"
 
 // TODO in this file:
 // 1. Make relay receive advertisement packets:
@@ -25,14 +25,18 @@
 
 static struct Packet receivedPacket;
 
-void transmit();
-
 void recvRadio();
+
+void processRegular(struct Packet *packet);
+void processAdv(struct Advertisement *receivedPacket);
+void processAdvStart(struct AdvertisementStart *receivedPacket);
+
+void transmitRegular(struct Packet *packet);
+void transmitAdv(struct Advertisement *adv);
+void transmitAdvStart(struct AdvertisementStart *advs);
 
 void appMain(void) {
     radioInit();
-
-    initializeCircularBuffer();
 
     radioSetReceiveHandle(recvRadio);
 
@@ -45,54 +49,119 @@ void appMain(void) {
     }
 }
 
-void transmit(struct Packet *packet) {
-    packet->deviceType = DEVICE_TYPE_RELAY;
-    calcChecksum(packet);
-
-//    PRINTF("packetID: %d\n", packet->packetID);
-//    PRINTF("checksum: %u\n", packet->checksum);
-
-    radioSend(packet, sizeof(struct Packet));
-}
-
 void recvRadio() {
     int16_t len;
 
     len = radioRecv(&receivedPacket, sizeof(struct Packet));
-//    PRINTF("Packet rec\n");
+    DEB("Packet rec\n");
 
     if (len > 0) {
-
-        // ignore invalid packets
-        if (!checkValidity(&receivedPacket)) {
-//            PRINTF("Packet invalid, MAGIC:%d\n", receivedPacket.magic);
+        // check if packet contains magic
+        if (receivedPacket.magic != MAGIC) {
+            DEB("Packet invalid, MAGIC:%d\n", receivedPacket.magic);
             return;
         }
 
+        // actions dependant on packetType
+        switch (recievedPacket.packetType) {
+            case PACKET_TYPE_PACKET:
+                processRegular(&receivedPacket);
+                
 
-        // Check whether this packet has already been received
-        if (packetAlreadyReceived(receivedPacket.id)) {
-//            PRINTF("packetAlreadyReceived:%d|%d\n", receivedPacket.packetID, receivedPacket.deviceID);
-            return;
+                break;
+            case PACKET_TYPE_ADVERTISEMENT:
+                // cast packet to adv type
+                processAdv(&receivedPacket);
+
+                // ignore invalid packets
+                if (!checkAdvValidity(&receivedPacket)) {
+                    DEB("Packet invalid, MAGIC:%d\n", receivedPacket.magic);
+                    return;
+                }
+
+                break;
+            case PACKET_TYPE_ADVERTISEMENT_START:
+                // cast packet to advStart type
+                AdvertisementStart packet;
+
+                // ignore invalid packets
+                if (!checkAdvStartValidity(&receivedPacket)) {
+                    DEB("Packet invalid, MAGIC:%d\n", receivedPacket.magic);
+                    return;
+                }
+
+                break;
+            default:
+                DEB("Invalid packet or invalid packet type received\n");
+                break:
         }
-
-        // Write down this packet as a sent one
-        pushIntoCircularBuffer(receivedPacket.id);
-//        PRINTF("Data from: %d: %d\n", receivedPacket.deviceID, receivedPacket.payload.lightSensorValue);
-
-        PRINTF("Data from: %d:%d -> light:%d RESENDING\n", receivedPacket.deviceID, receivedPacket.packetID, receivedPacket.payload.lightSensorValue);
-
-        // call transmit function
-        transmit(&receivedPacket);
     }
 }
 
+void processRegular(struct Packet *receivedPacket) {
+    // ignore invalid packets
+    if (!checkPckValidity(receivedPacket)) {
+        DEB("Packet invalid, MAGIC:%d\n", receivedPacket->magic);
+        return;
+    }
+
+    // ignore packets where hopCount is 0
+    if (receivedPacket->hopCount) {
+        DEB("Packet hop count has reached 0\n");
+        return;
+    }
+
+    // call transmit function for regular packet
+    transmitRegular(receivedPacket);
+
+    return;
+}
+
+void processAdv(struct Advertisement *receivedPacket) {
+    // cast to adv packet
+    Advertisement advPacket = *(struct Advertisement*)receivedPacket;
+
+    // ignore invalid packets
+    if (!checkAdvValidity(&advPacket)) {
+        DEB("Packet invalid, MAGIC:%d\n", receivedPacket->magic);
+        return;
+    }
+
+    // TODO: Finish this function.
+    return;
+}
+
+void processAdv(struct Advertisement *receivedPacket) {
+    // cast to advStart packet
+    AdvertisementStart advStartPacket = *(struct AdvertisementStart*)receivedPacket;
+
+    // ignore invalid packets
+    if (!checkAdvValidity(&advStartPacket)) {
+        DEB("Packet invalid, MAGIC:%d\n", receivedPacket->magic);
+        return;
+    }
+
+    // TODO: Finish this function.
+    return;
+}
+
+void transmitRegular(struct Packet *packet) {
+    packet->deviceType = DEVICE_TYPE_RELAY;
+    packet->hopCount = (packet->hopCount) - 1;
+    calcChecksum(packet);
+    
+    DEB("packetID: %d\n", packet->packetID);
+    DEB("checksum: %u\n", packet->checksum);
+
+    radioSend(packet, sizeof(struct Packet));
+}
 
 void transmitAdv(struct Advertisement *adv) {
     adv->blacklistedDeviceId = adv->deviceID;
     adv->deviceID = getID();
     adv->recordedHopCount++;
     calcAdvChecksum(adv);
+
     radioSend(adv, sizeof(struct Advertisement));
 }
 
@@ -100,5 +169,6 @@ void transmitAdvStart(struct AdvertisementStart *advs) {
     advs->blacklistedDeviceId = advs->deviceID;
     advs->deviceID = getID();
     calcAdvStartChecksum(advs);
+
     radioSend(advs, sizeof(struct AdvertisementStart));
 }
