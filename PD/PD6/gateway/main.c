@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include "./../protocol/protocol.h"
 #include "./../utilities/idChip.h"
-#include "../utilities/circularBuffer.h"
+#include "../utilities/debug.h"
 
 // TODO in this file:
 // 1. Make gateway send advertisement packets:
@@ -22,8 +22,9 @@
 
 void recvRadio(void);
 
+void sendAdv(void);
+
 void appMain(void) {
-    initializeCircularBuffer();
     radioInit();
     radioSetReceiveHandle(recvRadio);
     radioOn();
@@ -31,38 +32,39 @@ void appMain(void) {
         mdelay(5000);
         PRINTF("Output from GATEWAY, device ID is: ");
         PRINTF("%u\n", getID());
+        sendAdv();
     }
+}
+
+void sendAdv(void) {
+    struct Advertisement adv = createAdvPacket(getID(), 0);
+    adv.recordedHopCount = 0;
+    adv.blacklistedDeviceId = 0;
+    calcAdvChecksum(&adv);
+    radioSend(&adv, sizeof(struct Advertisement));
 }
 
 
 void recvRadio(void) {
     struct Packet packet;
     int len = radioRecv(&packet, sizeof(struct Packet));
-//    PRINTF("Packet rec\n");
+    DEB("Packet rec\n");
 
     if (len > 0) {
         // ignore invalid packets
-        if (!checkValidity(&packet)) {
-//            PRINTF("Packet invalid, MAGIC:%d\n", packet.magic);
+        if (!checkPckValidity(&packet)) {
+            DEB("Packet invalid, MAGIC:%d\n", packet.magic);
             return;
         }
 
         // check device type
         if (packet.deviceType != DEVICE_TYPE_RELAY) {
-//            PRINTF("Packet invalid, devType:%d\n", packet.deviceType);
+            DEB("Packet invalid, devType:%d\n", packet.deviceType);
             return;
         }
 
-        // Check whether this packet has already been received
-        if (packetAlreadyReceived(packet.id)) {
-//            PRINTF("packetAlreadyReceived:%d|%d\n", packet.packetID, packet.deviceID);
-            return;
-        }
-
-        // Write down this packet as a received one
-        pushIntoCircularBuffer(packet.id);
         // send to usb
-
         PRINTF("Data from: %d:%d -> light:%d\n", packet.deviceID, packet.packetID, packet.payload.lightSensorValue);
     }
 }
+
