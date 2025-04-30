@@ -5,20 +5,22 @@
 
 #include "./../protocol/protocol.h"
 #include "./../utilities/idChip.h"
-
-// TODO in this file:
-// 1. Make sensor receive advertisement packets
-// 2. The sensor records the lowest hopCount from the packets
-// 3. When sending a new packet, the sensor sets hopCount to what has been recorded
+#include "./../utilities/debug.h"
 
 uint16_t packetID = 0;
 
+uint16_t recordedHopCount = UINT16_MAX;
+
 uint16_t timeCounter = 0;
+
+void recvRadio();
 
 void transmit();
 
 void appMain(void) {
     radioInit();
+
+    radioSetReceiveHandle(recvRadio);
 
     radioOn();
 
@@ -34,7 +36,33 @@ void appMain(void) {
     }
 }
 
+void recvRadio(void) {
+    struct Advertisement packet;
+    int len = radioRecv(&packet, sizeof(struct Advertisement));
+    DEB("Packet rec\n");
+
+    if (len > 0) {
+        // ignore invalid packets
+        if (!checkAdvValidity(&packet)) {
+            DEB("Packet invalid, MAGIC:%d\n", packet.magic);
+            return;
+        }
+
+        // record new hopCount
+        if (packet.recordedHopCount < recordedHopCount) {
+            recordedHopCount = packet.recordedHopCount;
+            DEB("Recorded new hopCount: %u\n", recordedHopCount);
+        }
+    }
+}
+
 void transmit() {
+    // skip creating packet if the hopCount has not been changed
+    if (recordedHopCount == UINT16_MAX) {
+        DEB("HopCount not changed, packet not sent");
+        return;
+    }
+
     // create packet and fill packet
     // use first 2 bytes of id and hope that no collision will occur
     struct Packet packet = createPacket(getID() , DEVICE_TYPE_SENSOR, packetID);
@@ -43,12 +71,13 @@ void transmit() {
     struct Payload payload;
     payload.lightSensorValue = adcRead(5);
     packet.payload = payload;
+    // deduct 1 for sending this packet (consider it as the first step)
+    packet.hopCount = recordedHopCount - 1;
 
-    calcChecksum(&packet);
+    calcPckChecksum(&packet);
 
     PRINTF("packetID: %d\n", packet.packetID);
     PRINTF("checksum: %u\n", packet.checksum);
 
     radioSend(&packet, sizeof(struct Packet));
 }
-
