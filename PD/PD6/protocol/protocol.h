@@ -40,6 +40,9 @@ struct Packet {
         uint32_t id;
     };
 
+    // Target relay ID, only one relay will receive this packet
+    uint16_t target;
+
     // Packet payload
     struct Payload payload;
 
