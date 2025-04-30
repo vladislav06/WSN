@@ -28,12 +28,26 @@ static struct Packet receivedPacket;
 void recvRadio();
 
 void processRegular(struct Packet *packet);
+
 void processAdv(struct Advertisement *receivedPacket);
+
 void processAdvStart(struct AdvertisementStart *receivedPacket);
 
 void transmitRegular(struct Packet *packet);
+
 void transmitAdv(struct Advertisement *adv);
+
 void transmitAdvStart(struct AdvertisementStart *advs);
+
+struct RoutingTableEntry {
+    uint16_t devId;
+    uint16_t hopCount;
+};
+
+struct RoutingTableEntry routing = {0};
+bool nextAdvOverWrites = false;
+static uint16_t lastAdvId = 0;
+
 
 void appMain(void) {
     radioInit();
@@ -63,37 +77,21 @@ void recvRadio() {
         }
 
         // actions dependant on packetType
-        switch (recievedPacket.packetType) {
+        switch (receivedPacket.packetType) {
             case PACKET_TYPE_PACKET:
                 processRegular(&receivedPacket);
-                
-
                 break;
             case PACKET_TYPE_ADVERTISEMENT:
                 // cast packet to adv type
-                processAdv(&receivedPacket);
-
-                // ignore invalid packets
-                if (!checkAdvValidity(&receivedPacket)) {
-                    DEB("Packet invalid, MAGIC:%d\n", receivedPacket.magic);
-                    return;
-                }
-
+                processAdv((struct Advertisement *) &receivedPacket);
                 break;
             case PACKET_TYPE_ADVERTISEMENT_START:
                 // cast packet to advStart type
-                AdvertisementStart packet;
-
-                // ignore invalid packets
-                if (!checkAdvStartValidity(&receivedPacket)) {
-                    DEB("Packet invalid, MAGIC:%d\n", receivedPacket.magic);
-                    return;
-                }
-
+                processAdvStart((struct AdvertisementStart *) &receivedPacket);
                 break;
             default:
                 DEB("Invalid packet or invalid packet type received\n");
-                break:
+                break;
         }
     }
 }
@@ -106,20 +104,19 @@ void processRegular(struct Packet *receivedPacket) {
     }
 
     // ignore packets where hopCount is 0
-    if (receivedPacket->hopCount) {
+    if (!receivedPacket->hopCount) {
         DEB("Packet hop count has reached 0\n");
         return;
     }
 
     // call transmit function for regular packet
     transmitRegular(receivedPacket);
-
     return;
 }
 
 void processAdv(struct Advertisement *receivedPacket) {
     // cast to adv packet
-    Advertisement advPacket = *(struct Advertisement*)receivedPacket;
+    struct Advertisement advPacket = *receivedPacket;
 
     // ignore invalid packets
     if (!checkAdvValidity(&advPacket)) {
@@ -127,29 +124,49 @@ void processAdv(struct Advertisement *receivedPacket) {
         return;
     }
 
-    // TODO: Finish this function.
+    if (advPacket.blacklistedDeviceId == getID()) {
+        DEB("In blacklist");
+        return;
+    }
+    if (advPacket.recordedHopCount < routing.hopCount || nextAdvOverWrites) {
+        nextAdvOverWrites = false;
+        routing.hopCount = advPacket.recordedHopCount;
+        routing.devId = advPacket.deviceID;
+    }
+
+    //send to the rest of the network
+    transmitAdv(&advPacket);
     return;
 }
 
-void processAdv(struct Advertisement *receivedPacket) {
-    // cast to advStart packet
-    AdvertisementStart advStartPacket = *(struct AdvertisementStart*)receivedPacket;
+void processAdvStart(struct AdvertisementStart *receivedPacket) {
+    // cast to adv packet
+    struct AdvertisementStart advsPacket = *receivedPacket;
 
     // ignore invalid packets
-    if (!checkAdvValidity(&advStartPacket)) {
+    if (!checkAdvStartChecksum(&advsPacket)) {
         DEB("Packet invalid, MAGIC:%d\n", receivedPacket->magic);
         return;
     }
+    if (advsPacket.blacklistedDeviceId == getID()) {
+        DEB("In blacklist");
+        return;
+    }
 
-    // TODO: Finish this function.
+    nextAdvOverWrites = true;
+
+    transmitAdvStart(&advsPacket);
     return;
 }
+
 
 void transmitRegular(struct Packet *packet) {
     packet->deviceType = DEVICE_TYPE_RELAY;
     packet->hopCount = (packet->hopCount) - 1;
-    calcChecksum(packet);
-    
+    calcPckChecksum(packet);
+    packet->target = routing.devId;
+
+
     DEB("packetID: %d\n", packet->packetID);
     DEB("checksum: %u\n", packet->checksum);
 
