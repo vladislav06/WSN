@@ -5,6 +5,8 @@
 
 #include "./../protocol/protocol.h"
 #include "./../utilities/idChip.h"
+#define DEBUG
+
 #include "./../utilities/debug.h"
 
 static struct Packet receivedPacket;
@@ -31,10 +33,11 @@ struct RoutingTableEntry {
 struct RoutingTableEntry routing = {0};
 bool nextAdvOverWrites = true;
 static uint16_t lastAdvId = 0;
+static uint16_t lastAdvStartId = 0;
 
 void appMain(void) {
     radioInit();
-
+    radioSetChannel(19);
     radioSetReceiveHandle(recvRadio);
 
     radioOn();
@@ -106,7 +109,7 @@ void processAdv(struct Advertisement *receivedPacket) {
     }
 
     // ignore packets that should be ignored
-    if (advsPacket.packetID == lastAdvId) {
+    if (advPacket.packetID == lastAdvId) {
         DEB("Received packet ID is equal to lastAdvId, skipped\n");
         return;
     }
@@ -143,7 +146,7 @@ void processAdvStart(struct AdvertisementStart *receivedPacket) {
     }
 
     // ignore packets that should be ignored
-    if (advsPacket.packetID == lastAdvId) {
+    if (advsPacket.packetID == lastAdvStartId) {
         DEB("Received packet ID is equal to lastAdvId, skipped\n");
         return;
     }
@@ -155,7 +158,7 @@ void processAdvStart(struct AdvertisementStart *receivedPacket) {
     }
 
     // Save packet id to avoid retransmission
-    lastAdvId = advsPacket.packetID;
+    lastAdvStartId = advsPacket.packetID;
     // since advStart was received, routing must be reset
     nextAdvOverWrites = true;
 

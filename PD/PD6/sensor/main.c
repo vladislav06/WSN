@@ -5,6 +5,7 @@
 
 #include "./../protocol/protocol.h"
 #include "./../utilities/idChip.h"
+#define DEBUG
 #include "./../utilities/debug.h"
 
 uint16_t packetID = 0;
@@ -31,6 +32,7 @@ static uint16_t lastAdvId = 0;
 
 void appMain(void) {
     radioInit();
+    radioSetChannel(19);
 
     radioSetReceiveHandle(recvRadio);
 
