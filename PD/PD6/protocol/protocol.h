@@ -12,6 +12,12 @@ enum DeviceTypes {
     DEVICE_TYPE_RELAY,
     DEVICE_TYPE_GATEWAY
 };
+enum PacketType {
+    PACKET_TYPE_PACKET = 1,
+    PACKET_TYPE_ADVERTISEMENT,
+    PACKET_TYPE_ADVERTISEMENT_START,
+};
+
 
 struct Payload {
     uint16_t lightSensorValue;
@@ -24,6 +30,7 @@ struct Packet {
     // Number to identify this protocol's packets
     uint16_t magic;
 
+    enum PacketType packetType;
     // Device type to distinguish between Sensor and Relay
     uint8_t deviceType;
 
@@ -60,8 +67,8 @@ struct Advertisement {
     // Number to identify this protocol's packets
     uint16_t magic;
 
-    // TODO: Consider whether this id is still needed, may be simplified
-    // Or removed altogether in favor of something else.
+    enum PacketType packetType;
+
     union {
         struct {
             // Unique device identificator
@@ -83,10 +90,37 @@ struct Advertisement {
     uint16_t checksum;
 };
 
+/*
+    Advertisement packet structure - next advertisement packet after this forcefully overwrites value in routing table
+*/
+struct AdvertisementStart {
+    // Number to identify this protocol's packets
+    uint16_t magic;
+
+    enum PacketType packetType;
+
+    union {
+        struct {
+            // Unique device identificator
+            uint16_t deviceID;
+
+            // Unique packet identificator
+            uint16_t packetID;
+        };
+        uint32_t id;
+    };
+
+    // Blacklisted relay ID to avoid resending to the same one
+    uint16_t blacklistedDeviceId;
+
+    // Packet checksum for error check
+    uint16_t checksum;
+};
 
 struct Packet createPacket(uint16_t deviceID, enum DeviceTypes deviceType, uint16_t packetID);
 
 struct Advertisement createAdvPacket(uint16_t deviceID, uint16_t packetID);
+struct AdvertisementStart createAdvStartPacket(uint16_t deviceID, uint16_t packetID);
 
 /**
  * Calculates checksum of packet and saves it into checksum field
@@ -99,6 +133,7 @@ void calcPckChecksum(struct Packet *packet);
  * @param packet
  */
 void calcAdvChecksum(struct Advertisement *packet);
+void calcAdvStartChecksum(struct AdvertisementStart *packet);
 
 /**
  * Checks whether checksum of a packet matches with what is writen in the packet
@@ -111,6 +146,7 @@ bool checkPckChecksum(struct Packet *packet);
  * @param packet
  */
 bool checkAdvChecksum(struct Advertisement *packet);
+bool checkAdvStartChecksum(struct AdvertisementStart *packet);
 
 
 /**
@@ -126,5 +162,6 @@ bool checkPckValidity(struct Packet *packet);
  * @return
  */
 bool checkAdvValidity(struct Advertisement *packet);
+bool checkAdvStartValidity(struct AdvertisementStart *packet);
 
 #endif

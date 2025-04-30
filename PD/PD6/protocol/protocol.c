@@ -11,6 +11,7 @@
 struct Packet createPacket(uint16_t deviceID, enum DeviceTypes deviceType, uint16_t packetID) {
     struct Packet packet;
     packet.magic = MAGIC;
+    packet.packetType = PACKET_TYPE_PACKET;
     packet.deviceType = deviceType;
     packet.deviceID = deviceID;
     packet.packetID = packetID;
@@ -21,11 +22,23 @@ struct Packet createPacket(uint16_t deviceID, enum DeviceTypes deviceType, uint1
 struct Advertisement createAdvPacket(uint16_t deviceID, uint16_t packetID) {
     struct Advertisement packet;
     packet.magic = MAGIC;
+    packet.packetType = PACKET_TYPE_ADVERTISEMENT;
     packet.deviceID = deviceID;
     packet.packetID = packetID;
     packet.checksum = 0;
     packet.blacklistedDeviceId = 0;
     packet.recordedHopCount = 0;
+    return packet;
+}
+
+struct AdvertisementStart createAdvStartPacket(uint16_t deviceID, uint16_t packetID) {
+    struct AdvertisementStart packet;
+    packet.magic = MAGIC;
+    packet.packetType = PACKET_TYPE_ADVERTISEMENT_START;
+    packet.deviceID = deviceID;
+    packet.packetID = packetID;
+    packet.checksum = 0;
+    packet.blacklistedDeviceId = 0;
     return packet;
 }
 
@@ -88,6 +101,12 @@ void calcAdvChecksum(struct Advertisement *packet) {
     packet->checksum = crc;
 }
 
+void calcAdvStartChecksum(struct AdvertisementStart *packet) {
+    packet->checksum = 0;
+    uint16_t crc = crcSlow((uint8_t *) packet, sizeof(struct AdvertisementStart));
+    packet->checksum = crc;
+}
+
 /**
  * Checks whether checksum of a packet matches with what is writen in the packet
  * @param packet
@@ -124,6 +143,19 @@ bool checkAdvChecksum(struct Advertisement *packet) {
     return calculatedCrc == packet->checksum;
 }
 
+bool checkAdvStartChecksum(struct AdvertisementStart *packet) {
+    // save packet's crc into temp var, because original crc was calculated with packet->checksum field being 0
+    uint16_t crc = packet->checksum;
+    packet->checksum = 0;
+    uint16_t calculatedCrc = crcSlow((uint8_t *) packet, sizeof(struct AdvertisementStart));
+    packet->checksum = crc;
+
+    if (calculatedCrc != packet->checksum) {
+        DEB("checksum mismatch, must be:%d | got:%d\n", calculatedCrc, packet->checksum);
+    }
+    return calculatedCrc == packet->checksum;
+}
+
 bool checkPckValidity(struct Packet *packet) {
     if (packet->magic != MAGIC) {
         DEB("magic missmatch\n");
@@ -147,3 +179,16 @@ bool checkAdvValidity(struct Advertisement *packet) {
     }
     return true;
 }
+
+bool checkAdvStartValidity(struct AdvertisementStart *packet) {
+    if (packet->magic != MAGIC) {
+        DEB("magic mismatch\n");
+        return false;
+    }
+    if (!checkAdvStartChecksum(packet)) {
+        DEB("checksum mismatch\n");
+        return false;
+    }
+    return true;
+}
+
